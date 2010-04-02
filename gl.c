@@ -49,9 +49,36 @@ enum {
 	REQ_WRITEADDR,
 	REQ_READDATA,
 	REQ_WRITEDATA,
+	REQ_GPIOOE = 0x89,
+	REQ_GPIOREAD,
+	REQ_GPIOWRITE
 };
 
 static struct libusb_device_handle *g_devh = NULL;
+
+int gl_gpio_oe(unsigned int mask)
+{
+	unsigned char packet[8] = {mask & 0xFF};
+	int retval = libusb_control_transfer(g_devh, CTRL_OUT, 0xc, REQ_GPIOOE, 0, packet, 1,TIMEOUT);
+	if (retval != 1) printf("%s: libusb_control_transfer returned %d\n", __FUNCTION__, retval);
+	return retval;
+}
+
+int gl_gpio_read(void)
+{
+	unsigned char packet[8] = {0};
+	int retval = libusb_control_transfer(g_devh, CTRL_IN, 0xc, REQ_GPIOREAD, 0, packet, 1,TIMEOUT);
+	if (retval != 1) printf("%s: libusb_control_transfer returned %d\n", __FUNCTION__, retval);
+	return retval == 1 ? packet[0] : retval;
+}
+
+int gl_gpio_write(unsigned int val)
+{
+	unsigned char packet[8] = {val & 0xFF};
+	int retval = libusb_control_transfer(g_devh, CTRL_OUT, 0xc, REQ_GPIOWRITE, 0, packet, 1,TIMEOUT);
+	if (retval != 1) printf("%s: libusb_control_transfer returned %d\n", __FUNCTION__, retval);
+	return retval;
+}
 
 int gl_write_address(unsigned int address)
 {
